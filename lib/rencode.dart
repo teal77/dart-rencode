@@ -2,6 +2,7 @@ library rencode;
 
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:collection';
 
 /* The bencode 'typecodes' such as i, d, etc have been extended and
     relocated on the base-256 character set. */
@@ -60,18 +61,20 @@ class Encoder extends Converter<Object, List<int>> {
 }
 
 class Decoder extends Converter<List<int>, Object> {
-  List<int> _input;
-  int _pos;
+  Queue<int> _input;
 
   @override
   Object convert(List<int> input) {
-    this._input = input;
-    _pos = 0;
+    this._input = new ListQueue.from(input);
     return _readObject();
   }
 
+  Queue _removeMany(int n) {
+    return new ListQueue.from(_input.skip(n));
+  }
+
   Object _readObject() {
-    int token = _input[_pos];
+    int token = _input.first;
     if (isMap(token) || isFixedMap(token)) {
       return _readMap();
     } else if (isList(token) || isFixedList(token)) {
@@ -85,7 +88,7 @@ class Decoder extends Converter<List<int>, Object> {
     } else if (isBool(token)) {
       return _readBool();
     } else if (token == NULL) {
-      _pos++;
+      _input.removeFirst();
       return null;
     } else {
       return _readStringOrBytes();
@@ -137,8 +140,7 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   Map<String, Object> _readMap() {
-    int token = _input[_pos];
-    _pos++;
+    int token = _input.removeFirst();
 
     Map<String, Object> map = new Map();
     if (isFixedMap(token)) {
@@ -149,20 +151,19 @@ class Decoder extends Converter<List<int>, Object> {
         map[key] = value;
       }
     } else {
-      while (_input[_pos] != END) {
+      while (_input.first != END) {
         String key = _readString();
         Object value = _readObject();
         map.putIfAbsent(key, value);
       }
-      _pos++;
+      _input.removeFirst();
     }
 
     return map;
   }
 
   List<Object> _readList() {
-    int token = _input[_pos];
-    _pos++;
+    int token = _input.removeFirst();
 
     List<Object> list = new List();
     if (isFixedList(token)) {
@@ -171,10 +172,10 @@ class Decoder extends Converter<List<int>, Object> {
         list.add(_readObject());
       }
     } else {
-      while (_input[_pos] != END) {
+      while (_input.first != END) {
         list.add(_readObject());
       }
-      _pos++;
+      _input.removeFirst();
     }
 
     return list;
@@ -186,8 +187,7 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   int _readInt() {
-    int token = _input[_pos];
-    _pos++;
+    int token = _input.removeFirst();
 
     if (isEmbeddedPositiveInt(token)) {
       return INT_POS_START + token;
@@ -196,49 +196,50 @@ class Decoder extends Converter<List<int>, Object> {
     } else {
       int i = 0;
       if (token == BYTE) {
-        Uint8List list = new Uint8List.fromList(_input.sublist(_pos, _pos + 1));
+        Uint8List list = new Uint8List.fromList(_input.take(1).toList());
         i = list.buffer.asByteData().getInt8(0);
-        _pos++;
+        _input = _removeMany(1);
       } else if (token == SHORT) {
-        Uint8List list = new Uint8List.fromList(_input.sublist(_pos, _pos + 2));
+        Uint8List list = new Uint8List.fromList(_input.take(2).toList());
         i = list.buffer.asByteData().getInt16(0);
-        _pos += 2;
+        _input = _removeMany(2);
       } else if (token == INT) {
-        Uint8List list = new Uint8List.fromList(_input.sublist(_pos, _pos + 4));
+        Uint8List list = new Uint8List.fromList(_input.take(4).toList());
         i = list.buffer.asByteData().getInt32(0);
-        _pos += 4;
+        _input = _removeMany(4);
       } else if (token == LONG) {
-        Uint8List list = new Uint8List.fromList(_input.sublist(_pos, _pos + 8));
+        Uint8List list = new Uint8List.fromList(_input.take(8).toList());
         i = list.buffer.asByteData().getInt64(0);
-        _pos += 8;
+        _input = _removeMany(8);
       }
       return i;
     }
   }
 
   double _readDouble() {
-    int token = _input[_pos];
-    _pos++;
+    int token = _input.removeFirst();
 
     double d = 0.0;
     if (token == FLOAT) {
-      Uint8List list = new Uint8List.fromList(_input.sublist(_pos, _pos + 4));
+      Uint8List list = new Uint8List.fromList(_input.take(4).toList());
       d = list.buffer.asByteData().getFloat32(0);
-      _pos += 4;
+      _input = _removeMany(4);
     } else if (token == DOUBLE) {
-      Uint8List list = new Uint8List.fromList(_input.sublist(_pos, _pos + 8));
+      Uint8List list = new Uint8List.fromList(_input.take(8).toList());
       d = list.buffer.asByteData().getFloat64(0);
-      _pos += 8;
+      _input = _removeMany(8);
     }
     return d;
   }
 
   Object _readNumber() {
-    _pos++;
+    _input.removeFirst();
 
-    int endPos = _input.indexOf(END, _pos);
-    String numStr = UTF8.decode(_input.sublist(_pos, endPos));
-    _pos = endPos + 1;
+    List<int> num = _input.takeWhile((i) => i != END).toList();
+    String numStr = UTF8.decode(num);
+
+    _input = _removeMany(num.length);
+    _input.removeFirst();
 
     if (numStr.contains('.')) {
       return double.parse(numStr);
@@ -248,8 +249,7 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   bool _readBool() {
-    int token = _input[_pos];
-    _pos ++;
+    int token = _input.removeFirst();
     if (token == TRUE) {
       return true;
     } else {
@@ -267,28 +267,28 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   List<int> _readByteString() {
-    int token = _input[_pos];
+    int token = _input.first;
 
     if (isFixedString(token)) {
-      _pos++;
+      _input.removeFirst();
       int length = token - STR_START;
-      List<int> bytes = _input.sublist(_pos, _pos + length);
-      _pos += length;
+      List<int> bytes = _input.take(length).toList();
+      _input = _removeMany(length);
       return bytes;
 
     } else if (token >= '1'.codeUnitAt(0) && token <= '9'.codeUnitAt(0)) {
-      int delimPos = _input.indexOf(LENGTH_DELIM, _pos);
-      String lengthStr = UTF8.decode(_input.sublist(_pos, delimPos));
-      int length = int.parse(lengthStr);
+      List<int> length = _input.takeWhile((i) => i != LENGTH_DELIM).toList();
+      String lengthStr = UTF8.decode(length);
+      int lengthInt = int.parse(lengthStr);
 
-      _pos += delimPos - _pos;
-      _pos++;
+      _input = _removeMany(length.length);
+      _input.removeFirst();
 
-      List<int> bytes = _input.sublist(_pos, _pos + length);
-      _pos += length;
+      List<int> bytes = _input.take(lengthInt).toList();
+      _input = _removeMany(lengthInt);
       return bytes;
     } else {
-      throw new FormatException("Malformed rencode ", _input, _pos);
+      throw new FormatException("Malformed rencode ", _input);
     }
   }
 }
