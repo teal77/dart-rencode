@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:test/test.dart';
 
 import 'package:rencode/rencode.dart';
@@ -160,8 +162,8 @@ void main() {
     expect(codec.decode(codec.encode(1234567890123456789.1234567890)), 1234567890123456789.1234567890);
 
     Object ld = [[{'a' : 15, 'bb' : 2.5, 'ccc' : 29.3, '' : [-0.3, [], false, true, '']},
-        ['a', 10 ^ 20],]..addAll(new Iterable.generate(100000)), 2^30, 2^33, 2^64, 2^62,
-        'b' * 30, 'v' * 33, 'c' * 64, 2^30, 2^33, 2^62, 2^64, 2^1000, false, true, false, -1, 0, 1];
+        ['a', 10e20],]..addAll(new Iterable.generate(100000)), pow(2, 30), pow(2, 33), pow(2, 60), pow(2, 66),
+        'b' * 30, 'v' * 33, 'c' * 64, pow(2, 1000), false, true, false, -1, 0, 1];
 
     expect(codec.decode(codec.encode(ld)), ld);
 
