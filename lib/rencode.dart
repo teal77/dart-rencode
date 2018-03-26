@@ -190,8 +190,10 @@ class Decoder extends Converter<List<int>, Object> {
     return _readObject();
   }
 
-  Queue _removeMany(int n) {
-    return new ListQueue.from(_input.skip(n));
+  void _removeMany(int n) {
+    for (int i = 0; i < n; i++) {
+      _input.removeFirst();
+    }
   }
 
   Object _readObject() {
@@ -314,19 +316,19 @@ class Decoder extends Converter<List<int>, Object> {
       if (token == BYTE) {
         Uint8List list = new Uint8List.fromList(_input.take(1).toList());
         i = list.buffer.asByteData().getInt8(0);
-        _input = _removeMany(1);
+        _removeMany(1);
       } else if (token == SHORT) {
         Uint8List list = new Uint8List.fromList(_input.take(2).toList());
         i = list.buffer.asByteData().getInt16(0);
-        _input = _removeMany(2);
+        _removeMany(2);
       } else if (token == INT) {
         Uint8List list = new Uint8List.fromList(_input.take(4).toList());
         i = list.buffer.asByteData().getInt32(0);
-        _input = _removeMany(4);
+        _removeMany(4);
       } else if (token == LONG) {
         Uint8List list = new Uint8List.fromList(_input.take(8).toList());
         i = list.buffer.asByteData().getInt64(0);
-        _input = _removeMany(8);
+        _removeMany(8);
       }
       return i;
     }
@@ -339,11 +341,11 @@ class Decoder extends Converter<List<int>, Object> {
     if (token == FLOAT) {
       Uint8List list = new Uint8List.fromList(_input.take(4).toList());
       d = list.buffer.asByteData().getFloat32(0);
-      _input = _removeMany(4);
+      _removeMany(4);
     } else if (token == DOUBLE) {
       Uint8List list = new Uint8List.fromList(_input.take(8).toList());
       d = list.buffer.asByteData().getFloat64(0);
-      _input = _removeMany(8);
+      _removeMany(8);
     }
     return d;
   }
@@ -354,7 +356,7 @@ class Decoder extends Converter<List<int>, Object> {
     List<int> num = _input.takeWhile((i) => i != END).toList();
     String numStr = UTF8.decode(num);
 
-    _input = _removeMany(num.length);
+    _removeMany(num.length);
     _input.removeFirst();
 
     if (numStr.contains('.')) {
@@ -389,7 +391,7 @@ class Decoder extends Converter<List<int>, Object> {
       _input.removeFirst();
       int length = token - STR_START;
       List<int> bytes = _input.take(length).toList();
-      _input = _removeMany(length);
+      _removeMany(length);
       return bytes;
 
     } else if (token >= '1'.codeUnitAt(0) && token <= '9'.codeUnitAt(0)) {
@@ -397,11 +399,11 @@ class Decoder extends Converter<List<int>, Object> {
       String lengthStr = UTF8.decode(length);
       int lengthInt = int.parse(lengthStr);
 
-      _input = _removeMany(length.length);
+      _removeMany(length.length);
       _input.removeFirst();
 
       List<int> bytes = _input.take(lengthInt).toList();
-      _input = _removeMany(lengthInt);
+      _removeMany(lengthInt);
       return bytes;
     } else {
       throw new FormatException("Malformed rencode ", _input);
