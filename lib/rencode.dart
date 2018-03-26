@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:collection';
 
-/* The bencode 'typecodes' such as i, d, etc have been extended and
-    relocated on the base-256 character set. */
+/*
+* The bencode 'typecodes' such as i, d, etc have been extended and
+* relocated on the base-256 character set.
+*/
 const int LIST = 59;
 const int DICTIONARY = 60;
 const int NUMBER = 61;
@@ -54,9 +56,127 @@ class RencodeCodec extends Codec<Object, List<int>> {
 }
 
 class Encoder extends Converter<Object, List<int>> {
+  Queue<int> _output;
+
   @override
   List<int> convert(Object input) {
+    _output = new ListQueue();
+    _writeObject(input);
+    return _output.toList();
+  }
 
+  void _writeObject(Object object) {
+    if (object is Map) {
+      _writeMap(object);
+    } else if (object is Iterable) {
+      _writeList(object);
+    } else if (object is int) {
+      _writeInt(object);
+    } else if (object is double) {
+      _writeDouble(object);
+    } else if (object is BigInt) {
+      _writeBigint(object);
+    } else if (object is bool) {
+      _writeBool(object);
+    } else if (object == null) {
+      _writeNull();
+    } else if (object is String) {
+      _writeString(object);
+    } else {
+      throw new ArgumentError("Object of type ${object.runtimeType.toString()} is not supported");
+    }
+  }
+
+  void _writeMap(Map map) {
+    if (map.length < DICT_COUNT) {
+      _output.add(DICT_START + map.length);
+      map.forEach((k, v) {
+        _writeObject(k);
+        _writeObject(v);
+      });
+    } else {
+      _output.add(DICTIONARY);
+      map.forEach((k, v) {
+        _writeObject(k);
+        _writeObject(v);
+      });
+      _output.add(END);
+    }
+  }
+
+  void _writeList(Iterable iterable) {
+    int length = iterable.length;
+    if (length < LIST_COUNT) {
+      _output.add(LIST_START + length);
+      iterable.forEach((o) => _writeObject(o));
+    } else {
+      _output.add(LIST);
+      iterable.forEach((o) => _writeObject(o));
+      _output.add(END);
+    }
+  }
+
+  void _writeInt(int i) {
+    if (i >= 0 && i < INT_POS_COUNT) {
+      _output.add(INT_POS_START + i);
+    } else if (i >= -INT_NEG_COUNT && i < 0) {
+      _output.add(INT_NEG_START - 1 - i);
+    } else if (i >= -128 && i < 128) {
+      ByteData b = new ByteData(1);
+      b.setUint8(0, i);
+      _output.add(BYTE);
+      _output.addAll(b.buffer.asUint8List());
+    } else if (i >= -32768 && i < 32768) {
+      ByteData b = new ByteData(2);
+      b.setUint16(0, i);
+      _output.add(SHORT);
+      _output.addAll(b.buffer.asUint8List());
+    } else if (i >= -2147483648 && i < 2147483648) {
+      ByteData b = new ByteData(4);
+      b.setUint32(0, i);
+      _output.add(INT);
+      _output.addAll(b.buffer.asUint8List());
+    } else if (i >= -9223372036854775808 && i <= 9223372036854775807) {
+      ByteData b = new ByteData(8);
+      b.setUint64(0, i);
+      _output.add(LONG);
+      _output.addAll(b.buffer.asUint8List());
+    } else {
+      _writeBigint(new BigInt.from(i));
+    }
+  }
+
+  void _writeDouble(double d) {
+    ByteData b = new ByteData(8);
+    b.setFloat64(0, d);
+    _output.add(DOUBLE);
+    _output.addAll(b.buffer.asUint8List());
+  }
+
+  void _writeBigint(BigInt b) {
+    _output.add(NUMBER);
+    _output.addAll(UTF8.encode(b.toString()));
+    _output.add(END);
+  }
+
+  void _writeBool(bool b) {
+    _output.add(b ? TRUE : FALSE);
+  }
+
+  void _writeNull() {
+    _output.add(NULL);
+  }
+
+  void _writeString(String s) {
+    if (s.length < STR_COUNT) {
+      _output.add(STR_START + s.length);
+      _output.addAll(UTF8.encode(s));
+    } else {
+      String lengthStr = s.length.toString();
+      _output.addAll(UTF8.encode(lengthStr));
+      _output.add(LENGTH_DELIM);
+      _output.addAll(UTF8.encode(s));
+    }
   }
 }
 
@@ -146,13 +266,13 @@ class Decoder extends Converter<List<int>, Object> {
     if (isFixedMap(token)) {
       int length = token - DICT_START;
       for (int i = 0; i < length; i++) {
-        String key = _readString();
+        Object key = _readObject();
         Object value = _readObject();
         map[key] = value;
       }
     } else {
       while (_input.first != END) {
-        String key = _readString();
+        Object key = _readObject();
         Object value = _readObject();
         map.putIfAbsent(key, value);
       }
@@ -179,11 +299,6 @@ class Decoder extends Converter<List<int>, Object> {
     }
 
     return list;
-  }
-
-  String _readString() {
-    List<int> bytes = _readByteString();
-    return UTF8.decode(bytes);
   }
 
   int _readInt() {
