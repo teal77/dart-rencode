@@ -168,14 +168,15 @@ class Encoder extends Converter<Object, List<int>> {
   }
 
   void _writeString(String s) {
-    if (s.length < STR_COUNT) {
-      _output.add(STR_START + s.length);
-      _output.addAll(UTF8.encode(s));
+    List<int> utf8String = UTF8.encode(s);
+    if (utf8String.length < STR_COUNT) {
+      _output.add(STR_START + utf8String.length);
+      _output.addAll(utf8String);
     } else {
-      String lengthStr = s.length.toString();
+      String lengthStr = utf8String.length.toString();
       _output.addAll(UTF8.encode(lengthStr));
       _output.add(LENGTH_DELIM);
-      _output.addAll(UTF8.encode(s));
+      _output.addAll(utf8String);
     }
   }
 }
