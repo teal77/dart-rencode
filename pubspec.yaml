@@ -3,7 +3,7 @@ description: "Obscure encoding standard used in the Deluge torrent client and it
 
 version: 0.0.1
 author: Aashrava Holla <aashrava.holla@gmail.com>
-homepage:
+homepage: https://github.com/teal77/dart-rencode
 
 dev_dependencies:
   test: "^0.12.32+2"
