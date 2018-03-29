@@ -7,4 +7,3 @@ homepage:
 
 dev_dependencies:
   test: "^0.12.32+2"
-  bencode: any

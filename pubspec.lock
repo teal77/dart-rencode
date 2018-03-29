@@ -29,13 +29,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.15.2+15"
-  bencode:
-    dependency: "direct dev"
-    description:
-      name: bencode
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.3"
   boolean_selector:
     dependency: transitive
     description:

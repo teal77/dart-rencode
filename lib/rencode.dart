@@ -197,7 +197,7 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   Object _readObject() {
-    int token = _input.first;
+    var token = _input.first;
     if (isMap(token) || isFixedMap(token)) {
       return _readMap();
     } else if (isList(token) || isFixedList(token)) {
@@ -263,20 +263,20 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   Map<String, Object> _readMap() {
-    int token = _input.removeFirst();
+    var token = _input.removeFirst();
 
-    Map<String, Object> map = new Map();
+    var map = {};
     if (isFixedMap(token)) {
-      int length = token - DICT_START;
+      var length = token - DICT_START;
       for (int i = 0; i < length; i++) {
-        Object key = _readObject();
-        Object value = _readObject();
+        var key = _readObject();
+        var value = _readObject();
         map[key] = value;
       }
     } else {
       while (_input.first != END) {
-        Object key = _readObject();
-        Object value = _readObject();
+        var key = _readObject();
+        var value = _readObject();
         map.putIfAbsent(key, value);
       }
       _input.removeFirst();
@@ -286,11 +286,11 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   List<Object> _readList() {
-    int token = _input.removeFirst();
+    var token = _input.removeFirst();
 
-    List<Object> list = new List();
+    var list = [];
     if (isFixedList(token)) {
-      int length = token - LIST_START;
+      var length = token - LIST_START;
       for (int i = 0; i < length; i++) {
         list.add(_readObject());
       }
@@ -305,28 +305,28 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   int _readInt() {
-    int token = _input.removeFirst();
+    var token = _input.removeFirst();
 
     if (isEmbeddedPositiveInt(token)) {
       return INT_POS_START + token;
     } else if (isEmbeddedNegativeInt(token)) {
       return INT_NEG_START - 1 - token;
     } else {
-      int i = 0;
+      var i = 0;
       if (token == BYTE) {
-        Uint8List list = new Uint8List.fromList(_input.take(1).toList());
+        var list = new Uint8List.fromList(_input.take(1).toList());
         i = list.buffer.asByteData().getInt8(0);
         _removeMany(1);
       } else if (token == SHORT) {
-        Uint8List list = new Uint8List.fromList(_input.take(2).toList());
+        var list = new Uint8List.fromList(_input.take(2).toList());
         i = list.buffer.asByteData().getInt16(0);
         _removeMany(2);
       } else if (token == INT) {
-        Uint8List list = new Uint8List.fromList(_input.take(4).toList());
+        var list = new Uint8List.fromList(_input.take(4).toList());
         i = list.buffer.asByteData().getInt32(0);
         _removeMany(4);
       } else if (token == LONG) {
-        Uint8List list = new Uint8List.fromList(_input.take(8).toList());
+        var list = new Uint8List.fromList(_input.take(8).toList());
         i = list.buffer.asByteData().getInt64(0);
         _removeMany(8);
       }
@@ -335,15 +335,15 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   double _readDouble() {
-    int token = _input.removeFirst();
+    var token = _input.removeFirst();
 
-    double d = 0.0;
+    var d = 0.0;
     if (token == FLOAT) {
-      Uint8List list = new Uint8List.fromList(_input.take(4).toList());
+      var list = new Uint8List.fromList(_input.take(4).toList());
       d = list.buffer.asByteData().getFloat32(0);
       _removeMany(4);
     } else if (token == DOUBLE) {
-      Uint8List list = new Uint8List.fromList(_input.take(8).toList());
+      var list = new Uint8List.fromList(_input.take(8).toList());
       d = list.buffer.asByteData().getFloat64(0);
       _removeMany(8);
     }
@@ -353,11 +353,10 @@ class Decoder extends Converter<List<int>, Object> {
   Object _readNumber() {
     _input.removeFirst();
 
-    List<int> num = _input.takeWhile((i) => i != END).toList();
-    String numStr = UTF8.decode(num);
+    var num = _input.takeWhile((i) => i != END).toList();
+    var numStr = UTF8.decode(num);
 
-    _removeMany(num.length);
-    _input.removeFirst();
+    _removeMany(num.length + 1);
 
     if (numStr.contains('.')) {
       return double.parse(numStr);
@@ -367,7 +366,7 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   bool _readBool() {
-    int token = _input.removeFirst();
+    var token = _input.removeFirst();
     if (token == TRUE) {
       return true;
     } else {
@@ -376,7 +375,7 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   Object _readStringOrBytes() {
-    List<int> bytes = _readByteString();
+    var bytes = _readByteString();
     try {
       return UTF8.decode(bytes);
     } catch (FormatException) {
@@ -385,24 +384,23 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   List<int> _readByteString() {
-    int token = _input.first;
+    var token = _input.first;
 
     if (isFixedString(token)) {
       _input.removeFirst();
-      int length = token - STR_START;
-      List<int> bytes = _input.take(length).toList();
+      var length = token - STR_START;
+      var bytes = _input.take(length).toList();
       _removeMany(length);
       return bytes;
 
     } else if (token >= '1'.codeUnitAt(0) && token <= '9'.codeUnitAt(0)) {
-      List<int> length = _input.takeWhile((i) => i != LENGTH_DELIM).toList();
-      String lengthStr = UTF8.decode(length);
-      int lengthInt = int.parse(lengthStr);
+      var length = _input.takeWhile((i) => i != LENGTH_DELIM).toList();
+      var lengthStr = UTF8.decode(length);
+      var lengthInt = int.parse(lengthStr);
 
-      _removeMany(length.length);
-      _input.removeFirst();
+      _removeMany(length.length + 1);
 
-      List<int> bytes = _input.take(lengthInt).toList();
+      var bytes = _input.take(lengthInt).toList();
       _removeMany(lengthInt);
       return bytes;
     } else {
