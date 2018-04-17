@@ -27,7 +27,7 @@ const int LENGTH_DELIM = 58;
 const int INT_POS_START = 0;
 const int INT_POS_COUNT = 44;
 
-//Negative integers with value embedded in typecode..
+//Negative integers with value embedded in typecode.
 const int INT_NEG_START = 70;
 const int INT_NEG_COUNT = 32;
 
@@ -87,7 +87,7 @@ class Encoder extends Converter<Object, List<int>> {
     }
   }
 
-  void _writeMap(Map map) {
+  void _writeMap(Map<Object, Object> map) {
     if (map.length < DICT_COUNT) {
       _output.add(DICT_START + map.length);
       map.forEach((k, v) {
@@ -104,7 +104,7 @@ class Encoder extends Converter<Object, List<int>> {
     }
   }
 
-  void _writeList(Iterable iterable) {
+  void _writeList(Iterable<Object> iterable) {
     int length = iterable.length;
     if (length < LIST_COUNT) {
       _output.add(LIST_START + length);
@@ -155,7 +155,7 @@ class Encoder extends Converter<Object, List<int>> {
 
   void _writeBigint(BigInt b) {
     _output.add(NUMBER);
-    _output.addAll(UTF8.encode(b.toString()));
+    _output.addAll(utf8.encode(b.toString()));
     _output.add(END);
   }
 
@@ -168,13 +168,13 @@ class Encoder extends Converter<Object, List<int>> {
   }
 
   void _writeString(String s) {
-    List<int> utf8String = UTF8.encode(s);
+    List<int> utf8String = utf8.encode(s);
     if (utf8String.length < STR_COUNT) {
       _output.add(STR_START + utf8String.length);
       _output.addAll(utf8String);
     } else {
       String lengthStr = utf8String.length.toString();
-      _output.addAll(UTF8.encode(lengthStr));
+      _output.addAll(utf8.encode(lengthStr));
       _output.add(LENGTH_DELIM);
       _output.addAll(utf8String);
     }
@@ -262,10 +262,10 @@ class Decoder extends Converter<List<int>, Object> {
     return typeCode >= STR_START && typeCode < (STR_START + STR_COUNT);
   }
 
-  Map<String, Object> _readMap() {
+  Map<Object, Object> _readMap() {
     var token = _input.removeFirst();
 
-    var map = {};
+    var map = <Object, Object>{};
     if (isFixedMap(token)) {
       var length = token - DICT_START;
       for (int i = 0; i < length; i++) {
@@ -277,7 +277,7 @@ class Decoder extends Converter<List<int>, Object> {
       while (_input.first != END) {
         var key = _readObject();
         var value = _readObject();
-        map.putIfAbsent(key, value);
+        map[key] = value;
       }
       _input.removeFirst();
     }
@@ -288,7 +288,7 @@ class Decoder extends Converter<List<int>, Object> {
   List<Object> _readList() {
     var token = _input.removeFirst();
 
-    var list = [];
+    var list = <Object>[];
     if (isFixedList(token)) {
       var length = token - LIST_START;
       for (int i = 0; i < length; i++) {
@@ -354,7 +354,7 @@ class Decoder extends Converter<List<int>, Object> {
     _input.removeFirst();
 
     var num = _input.takeWhile((i) => i != END).toList();
-    var numStr = UTF8.decode(num);
+    var numStr = utf8.decode(num);
 
     _removeMany(num.length + 1);
 
@@ -377,7 +377,7 @@ class Decoder extends Converter<List<int>, Object> {
   Object _readStringOrBytes() {
     var bytes = _readByteString();
     try {
-      return UTF8.decode(bytes);
+      return utf8.decode(bytes);
     } catch (FormatException) {
       return bytes;
     }
@@ -395,7 +395,7 @@ class Decoder extends Converter<List<int>, Object> {
 
     } else if (token >= '1'.codeUnitAt(0) && token <= '9'.codeUnitAt(0)) {
       var length = _input.takeWhile((i) => i != LENGTH_DELIM).toList();
-      var lengthStr = UTF8.decode(length);
+      var lengthStr = utf8.decode(length);
       var lengthInt = int.parse(lengthStr);
 
       _removeMany(length.length + 1);
@@ -408,4 +408,3 @@ class Decoder extends Converter<List<int>, Object> {
     }
   }
 }
-

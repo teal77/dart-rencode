@@ -161,7 +161,7 @@ void main() {
     expect(codec.decode(codec.encode(1234567890123456789)), 1234567890123456789);
     expect(codec.decode(codec.encode(1234567890123456789.1234567890)), 1234567890123456789.1234567890);
 
-    Object ld = [[{'a' : 15, 'bb' : 2.5, 'ccc' : 29.3, '' : [-0.3, [], false, true, '']},
+    Object ld = [[{'a' : 15, 'bb' : 2.5, 'ccc' : 29.3, '' : [-0.3, <int>[], false, true, '']},
         ['a', 10e20],]..addAll(new Iterable.generate(100000)), pow(2, 30), pow(2, 33), pow(2, 60), pow(2, 66),
         'b' * 30, 'v' * 33, 'c' * 64, pow(2, 1000), false, true, false, -1, 0, 1];
 
