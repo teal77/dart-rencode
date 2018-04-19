@@ -187,7 +187,17 @@ class Decoder extends Converter<List<int>, Object> {
   @override
   Object convert(List<int> input) {
     this._input = new ListQueue.from(input);
-    return _readObject();
+    try {
+      return _readObject();
+    } catch (e) {
+      if (e is FormatException) {
+        rethrow;
+      } else if (e is StateError) {
+        throw new FormatException("Malformed rencode ", input);
+      } else {
+        rethrow;
+      }
+    }
   }
 
   void _removeMany(int n) {
