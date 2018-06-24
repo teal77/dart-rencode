@@ -6,6 +6,6 @@ Rencoding is a more complicated version of [bencoding](https://en.wikipedia.org/
 
 It produces smaller encoding for small inputs than the original bencode.
 
-####Note
+**Note**
 
 You probably don't need this unless you are writing a Deluge RPC client.
