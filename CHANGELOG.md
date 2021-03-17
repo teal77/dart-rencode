@@ -9,3 +9,7 @@
 ## [0.0.3] - 2018-09-22
 
 * Updated dependencies
+
+## [0.0.4] - 2021-03-17
+
+* Update dependencies, sdk constraints

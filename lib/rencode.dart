@@ -46,12 +46,12 @@ const int LIST_COUNT = 64;
 class RencodeCodec extends Codec<Object, List<int>> {
   @override
   Encoder get encoder {
-    return new Encoder();
+    return Encoder();
   }
 
   @override
   Decoder get decoder {
-    return new Decoder();
+    return Decoder();
   }
 }
 
@@ -60,7 +60,7 @@ class Encoder extends Converter<Object, List<int>> {
 
   @override
   List<int> convert(Object input) {
-    _output = new ListQueue();
+    _output = ListQueue();
     _writeObject(input);
     return _output.toList();
   }
@@ -83,7 +83,7 @@ class Encoder extends Converter<Object, List<int>> {
     } else if (object is String) {
       _writeString(object);
     } else {
-      throw new ArgumentError("Object of type ${object.runtimeType.toString()} is not supported");
+      throw ArgumentError('Object of type ${object.runtimeType.toString()} is not supported');
     }
   }
 
@@ -105,7 +105,7 @@ class Encoder extends Converter<Object, List<int>> {
   }
 
   void _writeList(Iterable<Object> iterable) {
-    int length = iterable.length;
+    var length = iterable.length;
     if (length < LIST_COUNT) {
       _output.add(LIST_START + length);
       iterable.forEach((o) => _writeObject(o));
@@ -122,32 +122,32 @@ class Encoder extends Converter<Object, List<int>> {
     } else if (i >= -INT_NEG_COUNT && i < 0) {
       _output.add(INT_NEG_START - 1 - i);
     } else if (i >= -128 && i < 128) {
-      ByteData b = new ByteData(1);
+      var b = ByteData(1);
       b.setUint8(0, i);
       _output.add(BYTE);
       _output.addAll(b.buffer.asUint8List());
     } else if (i >= -32768 && i < 32768) {
-      ByteData b = new ByteData(2);
+      var b = ByteData(2);
       b.setUint16(0, i);
       _output.add(SHORT);
       _output.addAll(b.buffer.asUint8List());
     } else if (i >= -2147483648 && i < 2147483648) {
-      ByteData b = new ByteData(4);
+      var b = ByteData(4);
       b.setUint32(0, i);
       _output.add(INT);
       _output.addAll(b.buffer.asUint8List());
     } else if (i >= -9223372036854775808 && i <= 9223372036854775807) {
-      ByteData b = new ByteData(8);
+      var b = ByteData(8);
       b.setUint64(0, i);
       _output.add(LONG);
       _output.addAll(b.buffer.asUint8List());
     } else {
-      _writeBigint(new BigInt.from(i));
+      _writeBigint(BigInt.from(i));
     }
   }
 
   void _writeDouble(double d) {
-    ByteData b = new ByteData(8);
+    var b = ByteData(8);
     b.setFloat64(0, d);
     _output.add(DOUBLE);
     _output.addAll(b.buffer.asUint8List());
@@ -168,12 +168,12 @@ class Encoder extends Converter<Object, List<int>> {
   }
 
   void _writeString(String s) {
-    List<int> utf8String = utf8.encode(s);
+    var utf8String = utf8.encode(s);
     if (utf8String.length < STR_COUNT) {
       _output.add(STR_START + utf8String.length);
       _output.addAll(utf8String);
     } else {
-      String lengthStr = utf8String.length.toString();
+      var lengthStr = utf8String.length.toString();
       _output.addAll(utf8.encode(lengthStr));
       _output.add(LENGTH_DELIM);
       _output.addAll(utf8String);
@@ -186,14 +186,14 @@ class Decoder extends Converter<List<int>, Object> {
 
   @override
   Object convert(List<int> input) {
-    this._input = new ListQueue.from(input);
+    _input = ListQueue.from(input);
     try {
       return _readObject();
     } catch (e) {
       if (e is FormatException) {
         rethrow;
       } else if (e is StateError) {
-        throw new FormatException("Malformed rencode ", input);
+        throw FormatException('Malformed rencode ', input);
       } else {
         rethrow;
       }
@@ -201,7 +201,7 @@ class Decoder extends Converter<List<int>, Object> {
   }
 
   void _removeMany(int n) {
-    for (int i = 0; i < n; i++) {
+    for (var i = 0; i < n; i++) {
       _input.removeFirst();
     }
   }
@@ -278,7 +278,7 @@ class Decoder extends Converter<List<int>, Object> {
     var map = <Object, Object>{};
     if (isFixedMap(token)) {
       var length = token - DICT_START;
-      for (int i = 0; i < length; i++) {
+      for (var i = 0; i < length; i++) {
         var key = _readObject();
         var value = _readObject();
         map[key] = value;
@@ -301,7 +301,7 @@ class Decoder extends Converter<List<int>, Object> {
     var list = <Object>[];
     if (isFixedList(token)) {
       var length = token - LIST_START;
-      for (int i = 0; i < length; i++) {
+      for (var i = 0; i < length; i++) {
         list.add(_readObject());
       }
     } else {
@@ -324,19 +324,19 @@ class Decoder extends Converter<List<int>, Object> {
     } else {
       var i = 0;
       if (token == BYTE) {
-        var list = new Uint8List.fromList(_input.take(1).toList());
+        var list = Uint8List.fromList(_input.take(1).toList());
         i = list.buffer.asByteData().getInt8(0);
         _removeMany(1);
       } else if (token == SHORT) {
-        var list = new Uint8List.fromList(_input.take(2).toList());
+        var list = Uint8List.fromList(_input.take(2).toList());
         i = list.buffer.asByteData().getInt16(0);
         _removeMany(2);
       } else if (token == INT) {
-        var list = new Uint8List.fromList(_input.take(4).toList());
+        var list = Uint8List.fromList(_input.take(4).toList());
         i = list.buffer.asByteData().getInt32(0);
         _removeMany(4);
       } else if (token == LONG) {
-        var list = new Uint8List.fromList(_input.take(8).toList());
+        var list = Uint8List.fromList(_input.take(8).toList());
         i = list.buffer.asByteData().getInt64(0);
         _removeMany(8);
       }
@@ -349,11 +349,11 @@ class Decoder extends Converter<List<int>, Object> {
 
     var d = 0.0;
     if (token == FLOAT) {
-      var list = new Uint8List.fromList(_input.take(4).toList());
+      var list = Uint8List.fromList(_input.take(4).toList());
       d = list.buffer.asByteData().getFloat32(0);
       _removeMany(4);
     } else if (token == DOUBLE) {
-      var list = new Uint8List.fromList(_input.take(8).toList());
+      var list = Uint8List.fromList(_input.take(8).toList());
       d = list.buffer.asByteData().getFloat64(0);
       _removeMany(8);
     }
@@ -388,7 +388,7 @@ class Decoder extends Converter<List<int>, Object> {
     var bytes = _readByteString();
     try {
       return utf8.decode(bytes);
-    } catch (FormatException) {
+    } on FormatException {
       return bytes;
     }
   }
@@ -414,7 +414,7 @@ class Decoder extends Converter<List<int>, Object> {
       _removeMany(lengthInt);
       return bytes;
     } else {
-      throw new FormatException("Malformed rencode ", _input);
+      throw FormatException('Malformed rencode ', _input);
     }
   }
 }

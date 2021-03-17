@@ -8,7 +8,7 @@ void main() {
   test('Test encoding', () {
     //All the hardcoded arrays are output of original python rencode implementation
 
-    RencodeCodec codec = new RencodeCodec();
+    var codec = RencodeCodec();
 
     //Positive embedded ints
     expect(codec.encode(0), [0]);
@@ -43,7 +43,7 @@ void main() {
     expect(codec.encode(-9223372036854775808), [65, 128, 0, 0, 0, 0, 0, 0, 0]);
 
     //Numbers
-    expect(codec.encode(BigInt.parse("9223372036854775808")), [NUMBER]..addAll("9223372036854775808".codeUnits)..add(END));
+    expect(codec.encode(BigInt.parse('9223372036854775808')), [NUMBER, ...'9223372036854775808'.codeUnits, END]);
 
     //Null
     expect(codec.encode(null), [NULL]);
@@ -61,7 +61,7 @@ void main() {
     expect(codec.encode([1,2,3,4]), [196, 1, 2, 3, 4]);
 
     //Strings
-    expect(codec.encode("abcdefgh"), [136, 97, 98, 99, 100, 101, 102, 103, 104]);
+    expect(codec.encode('abcdefgh'), [136, 97, 98, 99, 100, 101, 102, 103, 104]);
     expect(codec.decode([57, 49, 58, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
     111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
     48, 33, 64, 35, 36, 37, 94, 38, 42, 40, 41, 95, 43, 45, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,
@@ -82,7 +82,7 @@ void main() {
   test('Test decoding', () {
     //All the hardcoded arrays are output of original python rencode implementation
 
-    RencodeCodec codec = new RencodeCodec();
+    var codec = RencodeCodec();
 
     //Positive embedded ints
     expect(codec.decode([0]), 0);
@@ -117,8 +117,8 @@ void main() {
     expect(codec.decode([65, 128, 0, 0, 0, 0, 0, 0, 0]), -9223372036854775808);
 
     //Numbers
-    expect(codec.decode([NUMBER]..addAll("9223372036854775808".codeUnits)..add(END)), BigInt.parse("9223372036854775808"));
-    expect(codec.decode([NUMBER]..addAll("9.223372036854775808".codeUnits)..add(END)), 9.223372036854775808);
+    expect(codec.decode([NUMBER, ...'9223372036854775808'.codeUnits, END]), BigInt.parse('9223372036854775808'));
+    expect(codec.decode([NUMBER, ...'9.223372036854775808'.codeUnits, END]), 9.223372036854775808);
 
     //Null
     expect(codec.decode([NULL]), null);
@@ -136,7 +136,7 @@ void main() {
     expect(codec.decode([196, 1, 2, 3, 4]), [1,2,3,4]);
 
     //Strings
-    expect(codec.decode([136, 97, 98, 99, 100, 101, 102, 103, 104]), "abcdefgh");
+    expect(codec.decode([136, 97, 98, 99, 100, 101, 102, 103, 104]), 'abcdefgh');
     expect(codec.decode([57, 49, 58, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
     111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
     48, 33, 64, 35, 36, 37, 94, 38, 42, 40, 41, 95, 43, 45, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,
@@ -155,14 +155,14 @@ void main() {
     });
 
   test('Test both', () {
-    RencodeCodec codec = new RencodeCodec();
+    var codec = RencodeCodec();
 
     expect(codec.decode(codec.encode(1.2345)), 1.2345);
     expect(codec.decode(codec.encode(1234567890123456789)), 1234567890123456789);
     expect(codec.decode(codec.encode(1234567890123456789.1234567890)), 1234567890123456789.1234567890);
 
     Object ld = [[{'a' : 15, 'bb' : 2.5, 'ccc' : 29.3, '' : [-0.3, <int>[], false, true, '']},
-        ['a', 10e20],]..addAll(new Iterable.generate(100000)), pow(2, 30), pow(2, 33), pow(2, 60), pow(2, 66),
+        ['a', 10e20], ...Iterable.generate(100000),], pow(2, 30), pow(2, 33), pow(2, 60), pow(2, 66),
         'b' * 30, 'v' * 33, 'c' * 64, pow(2, 1000), false, true, false, -1, 0, 1];
 
     expect(codec.decode(codec.encode(ld)), ld);
@@ -171,6 +171,6 @@ void main() {
 
     expect(codec.decode(codec.encode(ld)), ld);
 
-    expect(codec.decode(codec.encode("ಠ_ಠ")), "ಠ_ಠ");
+    expect(codec.decode(codec.encode('ಠ_ಠ')), 'ಠ_ಠ');
   });
 }

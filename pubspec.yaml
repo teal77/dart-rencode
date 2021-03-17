@@ -1,12 +1,13 @@
 name: rencode
 description: "Obscure encoding standard used in the Deluge torrent client and its RPC APIs."
 
-version: 0.0.3
+version: 0.0.4
 author: Aashrava Holla <aashrava.holla@gmail.com>
 homepage: https://github.com/teal77/dart-rencode
 
 environment:
-  sdk: '>=2.1.12 <3.0.0'
+  sdk: '>=2.2.2 <3.0.0'
 
 dev_dependencies:
   test: "^1.16.8"
+  pedantic: "^1.11.0"
