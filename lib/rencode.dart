@@ -43,7 +43,7 @@ const int STR_COUNT = 64;
 const int LIST_START = STR_START + STR_COUNT;
 const int LIST_COUNT = 64;
 
-class RencodeCodec extends Codec<Object, List<int>> {
+class RencodeCodec extends Codec<Object?, List<int>> {
   @override
   Encoder get encoder {
     return Encoder();
@@ -55,21 +55,21 @@ class RencodeCodec extends Codec<Object, List<int>> {
   }
 }
 
-class Encoder extends Converter<Object, List<int>> {
-  Queue<int> _output;
+class Encoder extends Converter<Object?, List<int>> {
+  late Queue<int> _output;
 
   @override
-  List<int> convert(Object input) {
+  List<int> convert(Object? input) {
     _output = ListQueue();
     _writeObject(input);
     return _output.toList();
   }
 
-  void _writeObject(Object object) {
+  void _writeObject(Object? object) {
     if (object is Map) {
-      _writeMap(object);
+      _writeMap(object as Map<Object, Object?>);
     } else if (object is Iterable) {
-      _writeList(object);
+      _writeList(object as List<Object?>);
     } else if (object is int) {
       _writeInt(object);
     } else if (object is double) {
@@ -87,7 +87,7 @@ class Encoder extends Converter<Object, List<int>> {
     }
   }
 
-  void _writeMap(Map<Object, Object> map) {
+  void _writeMap(Map<Object, Object?> map) {
     if (map.length < DICT_COUNT) {
       _output.add(DICT_START + map.length);
       map.forEach((k, v) {
@@ -104,7 +104,7 @@ class Encoder extends Converter<Object, List<int>> {
     }
   }
 
-  void _writeList(Iterable<Object> iterable) {
+  void _writeList(Iterable<Object?> iterable) {
     var length = iterable.length;
     if (length < LIST_COUNT) {
       _output.add(LIST_START + length);
@@ -181,11 +181,11 @@ class Encoder extends Converter<Object, List<int>> {
   }
 }
 
-class Decoder extends Converter<List<int>, Object> {
-  Queue<int> _input;
+class Decoder extends Converter<List<int>, Object?> {
+  late Queue<int> _input;
 
   @override
-  Object convert(List<int> input) {
+  Object? convert(List<int> input) {
     _input = ListQueue.from(input);
     try {
       return _readObject();
@@ -206,7 +206,7 @@ class Decoder extends Converter<List<int>, Object> {
     }
   }
 
-  Object _readObject() {
+  Object? _readObject() {
     var token = _input.first;
     if (isMap(token) || isFixedMap(token)) {
       return _readMap();
@@ -272,20 +272,20 @@ class Decoder extends Converter<List<int>, Object> {
     return typeCode >= STR_START && typeCode < (STR_START + STR_COUNT);
   }
 
-  Map<Object, Object> _readMap() {
+  Map<Object, Object?> _readMap() {
     var token = _input.removeFirst();
 
-    var map = <Object, Object>{};
+    var map = <Object, Object?>{};
     if (isFixedMap(token)) {
       var length = token - DICT_START;
       for (var i = 0; i < length; i++) {
-        var key = _readObject();
+        var key = _readObject()!;
         var value = _readObject();
         map[key] = value;
       }
     } else {
       while (_input.first != END) {
-        var key = _readObject();
+        var key = _readObject()!;
         var value = _readObject();
         map[key] = value;
       }
@@ -295,10 +295,10 @@ class Decoder extends Converter<List<int>, Object> {
     return map;
   }
 
-  List<Object> _readList() {
+  List<Object?> _readList() {
     var token = _input.removeFirst();
 
-    var list = <Object>[];
+    var list = <Object?>[];
     if (isFixedList(token)) {
       var length = token - LIST_START;
       for (var i = 0; i < length; i++) {
