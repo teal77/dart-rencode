@@ -13,3 +13,7 @@
 ## [0.0.4] - 2021-03-17
 
 * Update dependencies, sdk constraints
+
+## [0.0.5] - 2021-03-18
+
+* Null safety
